@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: apma
+      POSTGRES_PASSWORD: apma
+      POSTGRES_DB: apma
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  qdrant:
+    image: qdrant/qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  python-ai:
+    build: ./python-ai
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    env_file: .env
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+
+  express-api:
+    build: ./express-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file: .env
+    environment:
+      - AI_SERVICE_URL=http://python-ai:5001
+    depends_on:
+      - postgres
+      - qdrant
+      - python-ai
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "echo 'Frontend placeholder — Phase 4'"
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
+  qdrant_data:

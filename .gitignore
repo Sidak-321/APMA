@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+.venv/
+
+# Environment
+.env
+
+# Prisma
+express-api/prisma/migrations/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# uv
+.python-version
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
