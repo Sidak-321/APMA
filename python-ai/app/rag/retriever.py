@@ -1,14 +1,12 @@
+from fastembed import TextEmbedding
 from qdrant_client.models import Filter, FieldCondition, MatchValue
-from app.rag.embedder import client, model, COLLECTION_NAME
+from app.rag.embedder import client, COLLECTION_NAME
+
+model = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
 
 
-def retrieve(
-    query: str,
-    project_id: str,
-    user_id: str,
-    top_k: int = 5,
-) -> list:
-    query_vector = model.encode(query).tolist()
+def retrieve(query: str, project_id: str, user_id: str, top_k: int = 5) -> list:
+    query_vector = list(model.embed([query]))[0].tolist()
 
     results = client.search(
         collection_name=COLLECTION_NAME,

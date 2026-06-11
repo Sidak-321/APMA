@@ -1,17 +1,15 @@
 import os
 import uuid
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 
-MODEL_NAME = "all-MiniLM-L6-v2"
 VECTOR_DIM = 384
 COLLECTION_NAME = "apma_documents"
-
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 
-# Load once at module level — not per request
-model = SentenceTransformer(MODEL_NAME)
+# fastembed — no PyTorch, pure ONNX, CPU only
+model = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
 client = QdrantClient(url=QDRANT_URL)
 
 
@@ -24,15 +22,11 @@ def ensure_collection():
         )
 
 
-def embed_and_store(
-    chunks: list,
-    document_id: str,
-    project_id: str,
-    user_id: str,
-) -> int:
+def embed_and_store(chunks: list, document_id: str, project_id: str, user_id: str) -> int:
     ensure_collection()
 
-    embeddings = model.encode(chunks, batch_size=32, show_progress_bar=False)
+    # fastembed returns a generator — convert to list
+    embeddings = list(model.embed(chunks))
 
     points = [
         PointStruct(
