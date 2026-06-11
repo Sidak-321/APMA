@@ -6,14 +6,13 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock* ./
 
-# Explicitly create venv at a known path, then sync into it
-RUN uv venv .venv
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 COPY app/ ./app/
 
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
 
 EXPOSE 5001
-CMD ["python", "app/main.py"]
+CMD ["python", "-m", "app.main"]

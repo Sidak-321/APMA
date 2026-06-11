@@ -1,26 +1,25 @@
 import express from 'express';
+import fs from 'fs';
 import { config } from './config/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/auth.routes.js';
+import projectsRoutes from './routes/projects.routes.js';
+import documentsRoutes from './routes/documents.routes.js';
+
+if (!fs.existsSync('/tmp/uploads')) {
+  fs.mkdirSync('/tmp/uploads', { recursive: true });
+}
 
 const app = express();
-
 app.use(express.json());
 
-// Health check — Docker and Railway use this
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'express-api' }));
 
-// Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/projects/:projectId/documents', documentsRoutes);
 
-// 404 handler for unmatched routes
-app.use((req, res) => {
-  res.status(404).json({ error: `Route ${req.method} ${req.path} not found` });
-});
-
-// Error handler must be last
+app.use((req, res) => res.status(404).json({ error: `Route ${req.method} ${req.path} not found` }));
 app.use(errorHandler);
 
-app.listen(config.port, () => {
-  console.log(`Express API running on port ${config.port}`);
-});
+app.listen(config.port, () => console.log(`Express API running on port ${config.port}`));
