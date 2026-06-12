@@ -12,8 +12,8 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="border-b bg-white px-6 py-3 flex items-center justify-between">
-      <Link to="/dashboard" className="flex items-center gap-2 font-bold text-lg text-blue-600">
+    <nav className="border-b border-slate-200/80 bg-white px-6 py-3 flex items-center justify-between">
+      <Link to="/dashboard" className="flex items-center gap-2 font-bold text-lg text-indigo-600 hover:opacity-95 transition-opacity">
         <BrainCircuit size={24} />
         APMA
       </Link>

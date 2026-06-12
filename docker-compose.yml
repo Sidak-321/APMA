@@ -34,7 +34,7 @@ services:
     build: ./express-api
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3500:3001"
     env_file: .env
     environment:
       - AI_SERVICE_URL=http://python-ai:5001
