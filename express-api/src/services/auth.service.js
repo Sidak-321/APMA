@@ -40,26 +40,30 @@ export async function registerUser(email, password) {
 }
 
 export async function sendOtp(userId, email) {
-  // Invalidate any previous unused OTPs for this user
   await prisma.otpCode.updateMany({
     where: { userId, used: false },
     data: { used: true },
   });
 
-  // crypto.randomInt is cryptographically secure
   const code = String(crypto.randomInt(100000, 999999));
   const expiresAt = new Date(Date.now() + config.otpExpiresInMs);
 
   await prisma.otpCode.create({ data: { userId, code, expiresAt } });
 
-  await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: config.resendFrom,
     to: email,
     subject: 'Your APMA verification code',
     html: `<p>Your OTP is <strong>${code}</strong>. It expires in 10 minutes.</p>`,
   });
-}
 
+  console.log('[Resend] data:', JSON.stringify(data));
+  console.log('[Resend] error:', JSON.stringify(error));
+
+  if (error) {
+    console.error('[Resend] Failed to send OTP:', error);
+  }
+}
 export async function verifyOtp(email, code) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
@@ -147,4 +151,47 @@ export async function getMe(userId) {
     throw err;
   }
   return user;
+}
+export async function forgotPassword(email) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    // Don't reveal if email exists or not — security best practice
+    return { message: 'If that email exists, you will receive a reset code.' };
+  }
+
+  await sendOtp(user.id, email);
+  return { message: 'If that email exists, you will receive a reset code.' };
+}
+
+export async function resetPassword(email, code, newPassword) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    const err = new Error('Invalid or expired code');
+    err.status = 400;
+    throw err;
+  }
+
+  const otp = await prisma.otpCode.findFirst({
+    where: {
+      userId: user.id,
+      code,
+      used: false,
+      expiresAt: { gt: new Date() },
+    },
+  });
+
+  if (!otp) {
+    const err = new Error('Invalid or expired code');
+    err.status = 400;
+    throw err;
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 12);
+
+  await prisma.$transaction([
+    prisma.otpCode.update({ where: { id: otp.id }, data: { used: true } }),
+    prisma.user.update({ where: { id: user.id }, data: { password: hashed } }),
+  ]);
+
+  return { message: 'Password reset successfully.' };
 }

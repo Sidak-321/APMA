@@ -8,6 +8,8 @@ router.post('/register', authController.register);
 router.post('/verify-otp', authController.verifyOtp);
 router.post('/login', authController.login);
 router.post('/refresh', authController.refresh);
-router.get('/me', verifyJWT, authController.me); // protected
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
+router.get('/me', verifyJWT, authController.me);
 
 export default router;
