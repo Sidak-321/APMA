@@ -189,9 +189,9 @@ export async function resetPassword(email, code, newPassword) {
   const hashed = await bcrypt.hash(newPassword, 12);
 
   await prisma.$transaction([
-    prisma.otpCode.update({ where: { id: otp.id }, data: { used: true } }),
-    prisma.user.update({ where: { id: user.id }, data: { password: hashed } }),
-  ]);
+  prisma.otpCode.update({ where: { id: otp.id }, data: { used: true } }),
+  prisma.user.update({ where: { id: user.id }, data: { password: hashed, isVerified: true } }),
+]);
 
   return { message: 'Password reset successfully.' };
 }
