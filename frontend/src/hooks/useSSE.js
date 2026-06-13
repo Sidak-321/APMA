@@ -1,5 +1,9 @@
 import { useState, useRef, useCallback } from 'react'
 
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api'
+
 export function useSSE() {
   const [events, setEvents] = useState([])
   const [isStreaming, setIsStreaming] = useState(false)
@@ -14,7 +18,7 @@ export function useSSE() {
     const token = localStorage.getItem('accessToken')
 
     try {
-      const response = await fetch(`/api/projects/${projectId}/runs`, {
+      const response = await fetch(`${API_BASE}/projects/${projectId}/runs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,7 +38,7 @@ export function useSSE() {
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
-        buffer = lines.pop() // keep incomplete line in buffer
+        buffer = lines.pop()
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
