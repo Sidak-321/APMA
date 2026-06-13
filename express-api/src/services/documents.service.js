@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 import prisma from '../lib/prisma.js';
 import aiClient from '../lib/aiClient.js';
 
@@ -18,7 +19,7 @@ export async function uploadDocument(userId, projectId, file) {
     data: { projectId, userId, filename: file.originalname, fileType, status: 'pending' },
   });
 
-  // fire and forget — client polls for status
+  // fire and forget
   embedDocument(document.id, projectId, userId, file.path, fileType).catch(
     (err) => console.error(`Embed failed for doc ${document.id}:`, err.message)
   );
@@ -28,13 +29,20 @@ export async function uploadDocument(userId, projectId, file) {
 
 async function embedDocument(documentId, projectId, userId, filePath, fileType) {
   try {
+    // Read file and send as base64 — no shared filesystem needed
+    const fileBuffer = fs.readFileSync(filePath);
+    const fileBase64 = fileBuffer.toString('base64');
+
     const response = await aiClient.post('/embed', {
       document_id: documentId,
       project_id: projectId,
       user_id: userId,
-      file_path: filePath,
+      file_base64: fileBase64,
       file_type: fileType,
     });
+
+    // Clean up temp file after sending
+    fs.unlinkSync(filePath);
 
     await prisma.document.update({
       where: { id: documentId },

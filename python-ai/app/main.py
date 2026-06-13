@@ -10,7 +10,6 @@ app = Flask(__name__)
 
 
 def sse_event(event_type: str, node: str, content) -> str:
-    """Format a Server-Sent Event string."""
     data = json.dumps({"type": event_type, "node": node, "content": content})
     return f"data: {data}\n\n"
 
@@ -24,13 +23,13 @@ def health():
 def embed():
     data = request.get_json()
 
-    required = ["document_id", "project_id", "user_id", "file_path", "file_type"]
+    required = ["document_id", "project_id", "user_id", "file_base64", "file_type"]
     missing = [f for f in required if not data.get(f)]
     if missing:
         return jsonify({"error": f"Missing fields: {missing}"}), 400
 
     try:
-        text = parse_file(data["file_path"], data["file_type"])
+        text = parse_file(data["file_base64"], data["file_type"])
         chunks = chunk_text(text)
 
         if not chunks:
@@ -83,7 +82,6 @@ def run_agent():
         try:
             yield sse_event("start", "graph", "Agent started")
 
-            # Stream events as each node completes
             for event in agent_graph.stream(initial_state):
                 for node_name, node_output in event.items():
                     if node_name == "planner":
@@ -104,7 +102,6 @@ def run_agent():
                             "guardrails_passed": node_output.get("guardrails_passed", False),
                             "tokens_used": node_output.get("tokens_used", 0),
                         })
-                        # Send final output as last event
                         yield sse_event("complete", "graph", {
                             "output_json": node_output.get("output_json", {}),
                             "guardrails_passed": node_output.get("guardrails_passed", False),
