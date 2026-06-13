@@ -6,8 +6,7 @@ WORKDIR /app
 
 COPY pyproject.toml ./
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev
+RUN uv sync --no-dev
 
 COPY app/ ./app/
 
